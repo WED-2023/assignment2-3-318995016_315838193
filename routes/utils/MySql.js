@@ -1,53 +1,54 @@
-var mysql = require('mysql');
+var mysql = require('mysql2/promise');
 require("dotenv").config();
 
-
-const config={
-connectionLimit:4,
-  host: process.env.host,//"localhost"
-  user: process.env.user,//"root"
-  password: "pass_root@123",
-  database:"mydb"
-}
-const pool = new mysql.createPool(config);
-
-const connection =  () => {
-  return new Promise((resolve, reject) => {
-  pool.getConnection((err, connection) => {
-    if (err) reject(err);
-    console.log("MySQL pool connected: threadId " + connection.threadId);
-    const query = (sql, binding) => {
-      return new Promise((resolve, reject) => {
-         connection.query(sql, binding, (err, result) => {
-           if (err) reject(err);
-           resolve(result);
-           });
-         });
-       };
-       const release = () => {
-         return new Promise((resolve, reject) => {
-           if (err) reject(err);
-           console.log("MySQL pool released: threadId " + connection.threadId);
-           resolve(connection.release());
-         });
-       };
-       resolve({ query, release });
-     });
-   });
- };
-const query = (sql, binding) => {
-  return new Promise((resolve, reject) => {
-    pool.query(sql, binding, (err, result, fields) => {
-      if (err) reject(err);
-      resolve(result);
-    });
-  });
+const config = {
+  connectionLimit: 4,
+  host: process.env.HOST,
+  user: process.env.USER,
+  password: process.env.PASSWORD,
+  database: process.env.DATABASE
 };
+
+const pool = mysql.createPool(config);
+
+const connection = async () => {
+  try {
+    const conn = await pool.getConnection();
+    console.log("MySQL pool connected: threadId " + conn.threadId);
+    const query = async (sql, binding) => {
+      try {
+        const [rows, fields] = await conn.query(sql, binding);
+        return rows;
+      } catch (err) {
+        console.error('Error executing query:', err.code, err.message);
+        await conn.release(); // Ensure the connection is released on error
+        throw err;
+      }
+    };
+    const release = async () => {
+      try {
+        console.log("MySQL pool released: threadId " + conn.threadId);
+        await conn.release();
+      } catch (err) {
+        console.error('Error releasing connection:', err);
+        throw err;
+      }
+    };
+    return { query, release };
+  } catch (err) {
+    console.error('Error connecting to the database:', err.code, err.message);
+    throw err;
+  }
+};
+
+const query = async (sql, binding) => {
+  try {
+    const [rows, fields] = await pool.query(sql, binding);
+    return rows;
+  } catch (err) {
+    console.error('Error executing query:', err.code, err.message);
+    throw err;
+  }
+};
+
 module.exports = { pool, connection, query };
-
-
-
-
-
-
-

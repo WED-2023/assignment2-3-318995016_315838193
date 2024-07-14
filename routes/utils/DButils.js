@@ -2,18 +2,20 @@ require("dotenv").config();
 const MySql = require("./MySql");
 
 exports.execQuery = async function (query) {
-    let returnValue = []
-const connection = await MySql.connection();
-    try {
-    await connection.query("START TRANSACTION");
-    returnValue = await connection.query(query);
+  let returnValue = [];
+  const conn = await MySql.connection();
+
+  try {
+    await conn.query("START TRANSACTION");
+    returnValue = await conn.query(query);
+    await conn.query("COMMIT");
   } catch (err) {
-    await connection.query("ROLLBACK");
-    console.log('ROLLBACK at querySignUp', err);
+    await conn.query("ROLLBACK");
+    console.log('ROLLBACK at query execution', err);
     throw err;
   } finally {
-    await connection.release();
+    await conn.release();
   }
-  return returnValue
-}
 
+  return returnValue;
+};

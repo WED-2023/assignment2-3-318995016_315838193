@@ -28,12 +28,11 @@ app.use(express.static(path.join(__dirname, "public"))); //To serve static files
 //local:
 app.use(express.static(path.join(__dirname, "dist")));
 //remote:
-// app.use(express.static(path.join(__dirname, '../assignment-3-3-basic/dist')));
+// app.use(express.static(path.join(__dirname, 'C:/Users/Linoy Bitan/Desktop/recipes-preject/assignment2-1-318995016_315838193/dist')));
 app.get("/",function(req,res)
 { 
   //remote: 
-  // res.sendFile(path.join(__dirname, '../assignment-3-3-basic/dist/index.html'));
-  //local:
+  // res.sendFile(path.join(__dirname, 'C:/Users/Linoy Bitan/Desktop/recipes-preject/assignment2-1-318995016_315838193/dist/index.html'));
   res.sendFile(__dirname+"/index.html");
 
 });
@@ -88,6 +87,7 @@ app.use(function (err, req, res, next) {
 });
 
 
+// module.exports = app;
 
 const server = app.listen(port, () => {
   console.log(`Server listen on port ${port}`);
