@@ -76,7 +76,8 @@ router.post('/createPersonalRecipe',
     body('RecipesIngredients').isArray(),
     body('RecipesIngredients.*.name').isString().isLength({ max: 750 }),
     body('RecipesIngredients.*.amount').isNumeric(),
-    body('RecipesIngredients.*.unitLong').isString().isLength({ max: 750 })
+    body('RecipesIngredients.*.unitLong').isString().isLength({ max: 750 }),
+    body('recipe_type').isString().isLength({ max: 50 }) // Validate recipe_type
   ],
 
   async (req, res, next) => {
@@ -98,7 +99,8 @@ router.post('/createPersonalRecipe',
         summary,
         RecipesInstructions,
         RecipesIngredients,
-        portions
+        portions,
+        recipe_type
       } = req.body;
 
       const user_name = req.session.user_name;
@@ -121,7 +123,8 @@ router.post('/createPersonalRecipe',
         summary,
         instructionsArray,  // Pass the array
         RecipesIngredients,
-        portions
+        portions,
+        recipe_type 
       );
 
       res.status(200).send("The Recipe successfully created as personal recipe");
@@ -179,7 +182,8 @@ router.post('/createFamilyRecipe',
     body('RecipesIngredients').isArray(),
     body('RecipesIngredients.*.name').isString().isLength({ max: 750 }),
     body('RecipesIngredients.*.amount').isNumeric(),
-    body('RecipesIngredients.*.unitLong').isString().isLength({ max: 750 })
+    body('RecipesIngredients.*.unitLong').isString().isLength({ max: 750 }),
+    body('recipe_type').isString().isLength({ max: 50 }) // Validate recipe_type
   ],
 
   async (req, res, next) => {
@@ -203,7 +207,8 @@ router.post('/createFamilyRecipe',
         summary,
         RecipesInstructions,
         RecipesIngredients,
-        portions
+        portions,
+        recipe_type
       } = req.body;
 
       const user_name = req.session.user_name;
@@ -228,7 +233,8 @@ router.post('/createFamilyRecipe',
         summary,
         instructionsArray,  // Pass the array
         RecipesIngredients,
-        portions
+        portions,
+        recipe_type 
       );
 
       res.status(200).send("The Recipe successfully created as family recipe");
@@ -239,7 +245,7 @@ router.post('/createFamilyRecipe',
   });
 
 
-  
+
 //------------------------------------ Favorite Recipes Functions -------------------------------------------
 
 /**
@@ -249,7 +255,7 @@ router.post('/favoriteRecipes/:recipe_id/:recipe_type', async (req, res, next) =
   try {
     const user_name = req.session.user_name;
     // Extract the recipe_id and recipe_type from the request parameters
-    const { recipe_id, recipe_type } = req.params;    
+    const { recipe_id, recipe_type } = req.params;
     await user_utils.markAsFavorite(user_name, recipe_id, recipe_type);
     res.status(200).send("The Recipe successfully saved as favorite");
   } catch (error) {
@@ -261,23 +267,65 @@ router.post('/favoriteRecipes/:recipe_id/:recipe_type', async (req, res, next) =
 /**
  * Route to get full details of a favorite recipe by its ID
  */
-router.get('/favoriteRecipes/:recipe_id', async (req, res, next) => {
+// router.get('/favoriteRecipes/:recipe_id', async (req, res, next) => {
+//   try {
+//     // Extract the user_name from the session
+//     const user_name = req.session.user_name;
+//     // Extract the display_type from the request parameters
+//     const { recipe_id } = req.params;    
+//     // Retrieve the last 3 viewed recipes by the user
+//     const detailed_recipes = await user_utils.getViewedRecipes('favoriterecipes', user_name, 'full', 0, recipe_id);
+
+//     // Send the detailed recipes as a JSON response
+//     res.send({ recipe: detailed_recipes[0] });
+//   } catch (error) {
+//     // Pass any errors to the error handling middleware
+//     next(error);
+//   }
+// });
+router.get('/favoriteRecipes/:recipe_id/:recipe_type', async (req, res, next) => {
   try {
-    // Extract the user_name from the session
     const user_name = req.session.user_name;
-    // Extract the display_type from the request parameters
-    const { recipe_id } = req.params;    
-    // Retrieve the last 3 viewed recipes by the user
+    let { recipe_id, recipe_type } = req.params;
+    let isFavorite = false;
+
+    if (recipe_type === "last_viewed") {
+      // Fetch the actual recipe type from the viewed recipes
+      const result = await DButils.execQuery(`
+          SELECT recipe_type
+          FROM viewedrecipes
+          WHERE recipe_id='${recipe_id}'
+      `);
+
+      // Ensure there is a result before assigning
+      if (result.length > 0) {
+        recipe_type = result[0].recipe_type;
+      } else {
+        throw new Error('Recipe type not found in last viewed recipes');
+      }
+    }
+
+    if (recipe_type === "api" || recipe_type === "random" ||  recipe_type === "favorite") {
+      isFavorite = true;
+    } else {
+      // Query the database to check if the recipe is in the user's favorites
+      const result = await DButils.execQuery(`
+        SELECT 1 FROM favoriterecipes 
+        WHERE user_name='${user_name}' AND recipe_id=${recipe_id} AND recipe_type='${recipe_type}'
+      `);
+
+      // If the result has any rows, the recipe is a favorite
+      isFavorite = result.length > 0;
+    }
     const detailed_recipes = await user_utils.getViewedRecipes('favoriterecipes', user_name, 'full', 0, recipe_id);
 
     // Send the detailed recipes as a JSON response
-    res.send({ recipe: detailed_recipes[0] });
+    res.send({ recipe: detailed_recipes[0] , isFavorite:isFavorite});
+    // res.send({ isFavorite });
   } catch (error) {
-    // Pass any errors to the error handling middleware
     next(error);
   }
 });
-
 
 
 /**
@@ -311,8 +359,6 @@ router.get("/lastViewedRecipes", async (req, res, next) => {
   try {
     // Extract the user_name from the session
     const user_name = req.session.user_name;
-    // Extract the display_type from the request parameters
-    const display_type = req.params.display_type;
     // Retrieve the last 3 viewed recipes by the user
     const detailed_recipes = await user_utils.getViewedRecipes('viewedrecipes', user_name, 'preview', 3);
 
@@ -331,12 +377,14 @@ router.get('/lastViewedRecipes/:recipe_id', async (req, res, next) => {
     // Extract the user_name from the session
     const user_name = req.session.user_name;
     // Extract the display_type from the request parameters
-    const { recipe_id } = req.params;    
+    const { recipe_id} = req.params;
     // Retrieve the last 3 viewed recipes by the user
     const detailed_recipes = await user_utils.getViewedRecipes('viewedrecipes', user_name, 'full', 0, recipe_id);
 
+        // Check if the recipe is not null to determine if it was viewed
+        const isLastViewed = detailed_recipes.length > 0;
     // Send the detailed recipes as a JSON response
-    res.send({ recipe: detailed_recipes[0] });
+    res.send({ recipe: detailed_recipes[0] , isLastViewed });
   } catch (error) {
     // Pass any errors to the error handling middleware
     next(error);

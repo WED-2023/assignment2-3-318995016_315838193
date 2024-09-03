@@ -10,7 +10,7 @@ const recipe_utils = require("./recipes_utils");
  * @returns {Promise<Array>} - A promise that resolves to an array of recipes
  */
 async function getRecipes(user_name, category) {
-    const recipes_id = await DButils.execQuery(`SELECT recipe_id FROM ${category}recipes WHERE user_name='${user_name}'`);
+    const recipes_id = await DButils.execQuery(`SELECT recipe_id FROM recipes WHERE user_name='${user_name}' AND recipe_type ='${category}'`);
     const ids = recipes_id.map(item => item.recipe_id);
     // Get basic recipe information
     return await getPreviewRecipes(ids, category);
@@ -24,7 +24,7 @@ async function getRecipes(user_name, category) {
  */
 async function getPreviewRecipes(recipes_id_list, category) {
     const promises = recipes_id_list.map((recipe_id) => {
-        return DButils.execQuery(`SELECT * FROM ${category}recipes WHERE recipe_id=${recipe_id}`);
+        return DButils.execQuery(`SELECT * FROM recipes WHERE recipe_id=${recipe_id} AND recipe_type='${category}'`);
     });
     const recipes_p_list = await Promise.all(promises);
 
@@ -59,7 +59,7 @@ async function getPreviewRecipes(recipes_id_list, category) {
  * @returns {Promise<Object>} - A promise that resolves to a detailed recipe
  */
 async function getFullRecipe(recipe_id, category) {
-    const result_recipe = await DButils.execQuery(`SELECT * FROM ${category}recipes WHERE recipe_id=${recipe_id}`);
+    const result_recipe = await DButils.execQuery(`SELECT * FROM recipes WHERE recipe_id=${recipe_id} AND recipe_type ='${category}'`);
     const result_ingre = await DButils.execQuery(`SELECT ingredient_name, amount, unitLong FROM ingredients WHERE recipe_id=${recipe_id}`);
     const result_steps = await DButils.execQuery(`SELECT step_description FROM instructions WHERE recipe_id=${recipe_id} ORDER BY instruction_id`);
 
@@ -91,6 +91,7 @@ async function getRecipeDetails(recipe, ingre, steps, category) {
         image_recipe: recipe.image_recipe,
         portions: recipe.portions,
         likes: recipe.likes,
+        summary: recipe.summary,
         is_vegan: recipe.is_vegan,
         is_vegeterian: recipe.is_vegeterian,
         is_glutenFree: recipe.is_glutenFree,
@@ -136,43 +137,55 @@ async function createPersonalRecipe(
     summary,
     RecipesInstructions,
     RecipesIngredients,
-    portions
+    portions,
+    recipe_type
 ) {
     try {
+        // Start a transaction
+        await DButils.execQuery("START TRANSACTION");
+
         // Insert the recipe into the PersonalRecipes table
         const result = await DButils.execQuery(`
-            INSERT INTO personalrecipes 
-            (user_name, recipe_name, image_recipe, prepare_time, likes, is_vegan, is_vegeterian, is_glutenFree, summary, portions) 
+            INSERT INTO recipes 
+            (user_name, recipe_name, image_recipe, prepare_time, likes, is_vegan, is_vegeterian, is_glutenFree, summary, portions, recipe_type) 
             VALUES 
-            ('${user_name}', '${recipe_name}', '${image_recipe}', ${prepare_time}, ${likes}, ${is_vegan}, ${is_vegeterian}, ${is_glutenFree}, '${summary}', ${portions})
+            ('${user_name}', '${recipe_name.replace(/'/g, "''")}', '${image_recipe.replace(/'/g, "''")}', ${prepare_time}, ${likes}, ${is_vegan}, ${is_vegeterian}, ${is_glutenFree}, '${summary.replace(/'/g, "''")}', ${portions}, '${recipe_type.replace(/'/g, "''")}')
         `);
 
         // Get the ID of the newly inserted recipe
         const recipe_id = result.insertId;
 
+        // Insert each instruction into the instructions table
         let instruction_id = 1;
-
         const steps = RecipesInstructions.map((step_description) => {
             const step = `(${recipe_id}, ${instruction_id}, '${step_description.replace(/'/g, "''")}')`;
             instruction_id++;
             return step;
         });
-
         const insertInstructionsQuery = `INSERT INTO instructions (recipe_id, instruction_id, step_description) VALUES ${steps.join(", ")}`;
         await DButils.execQuery(insertInstructionsQuery);
 
-
         // Insert the ingredients into the Ingredients table
         for (const ingredient of RecipesIngredients) {
+            // Log ingredient for debugging
+            console.log('Inserting ingredient:', ingredient);
+
+            // Insert ingredient with SQL escaping to avoid syntax issues
             await DButils.execQuery(`
-                INSERT INTO ingredients ()
-                VALUES (${recipe_id}, '${ingredient.name}', ${ingredient.amount}, '${ingredient.unitLong}')
+                INSERT INTO ingredients (recipe_id, ingredient_name, amount, unitLong)
+                VALUES (${recipe_id}, '${ingredient.name.replace(/'/g, "''")}', ${ingredient.amount}, '${ingredient.unitLong.replace(/'/g, "''")}')
             `);
         }
+
+        // Commit the transaction
+        await DButils.execQuery("COMMIT");
     } catch (error) {
+        // Rollback transaction in case of error
+        await DButils.execQuery("ROLLBACK");
         throw new Error('Failed to create personal recipe: ' + error.message);
     }
 }
+
 
 
 
@@ -211,15 +224,16 @@ async function createFamilyRecipe(
     summary,
     RecipesInstructions,
     RecipesIngredients,
-    portions
+    portions,
+    recipe_type
 ) {
     try {
         // Insert the recipe into the familyRecipes table
         const result = await DButils.execQuery(`
-            INSERT INTO familyrecipes 
-            (user_name, recipe_name, image_recipe, prepare_time, likes, is_vegan, is_vegeterian, is_glutenFree, summary, portions, who_made, when_prepare) 
+            INSERT INTO recipes 
+            (user_name, recipe_name, image_recipe, prepare_time, likes, is_vegan, is_vegeterian, is_glutenFree, summary, portions, who_made, when_prepare, recipe_type) 
             VALUES 
-            ('${user_name}', '${recipe_name}', '${image_recipe}', ${prepare_time}, ${likes}, ${is_vegan}, ${is_vegeterian}, ${is_glutenFree}, '${summary}', ${portions}, '${who_made}', '${when_prepare}')
+            ('${user_name}', '${recipe_name}', '${image_recipe}', ${prepare_time}, ${likes}, ${is_vegan}, ${is_vegeterian}, ${is_glutenFree}, '${summary}', ${portions}, '${who_made}', '${when_prepare}','${recipe_type}')
         `);
 
         // Get the ID of the newly inserted recipe
@@ -277,10 +291,38 @@ async function putViewedRecipes(user_name, recipe_id, recipe_type) {
 
 
 //------------------------------------ Favorite Recipes Functions -------------------------------------------
-
 async function markAsFavorite(user_name, recipe_id, recipe_type) {
-    await DButils.execQuery(`insert into favoriterecipes (user_name, recipe_id, recipe_type) values ('${user_name}',${recipe_id}, '${recipe_type}')`);
+    if (recipe_type === "last_viewed") {
+        // Fetch the actual recipe type from the viewed recipes
+        const result = await DButils.execQuery(`
+            SELECT recipe_type
+            FROM viewedrecipes
+            WHERE recipe_id='${recipe_id}'
+        `);
+
+        // Ensure there is a result before assigning
+        if (result.length > 0) {
+            recipe_type = result[0].recipe_type;
+        } else {
+            throw new Error('Recipe type not found in last viewed recipes');
+        }
+    }
+    if(recipe_type === "api"  || recipe_type === "random") return
+
+    // Increment the likes for the recipe in the database
+    await DButils.execQuery(`
+        UPDATE recipes 
+        SET likes = likes + 1 
+        WHERE recipe_id = ${recipe_id} AND recipe_type='${recipe_type}'
+    `);
+
+    // Insert the recipe into the user's favorites
+    await DButils.execQuery(`
+        INSERT INTO favoriterecipes (user_name, recipe_id, recipe_type) 
+        VALUES ('${user_name}', ${recipe_id}, '${recipe_type}')
+    `);
 }
+
 
 
 //------------------------------------ Get Recipes By Type Functions -------------------------------------------
@@ -341,11 +383,11 @@ function categorizeRecipesByType(recipes) {
     const apiRecipeIds = [];
 
     recipes.forEach(recipe => {
-        if (recipe.recipe_type === "family") {
+        if (recipe.recipe_type === "family" || recipe.recipe_type === "favorite") {
             familyRecipeIds.push(recipe.recipe_id);
         } else if (recipe.recipe_type === "personal") {
             personalRecipeIds.push(recipe.recipe_id);
-        } else if (recipe.recipe_type === "api") {
+        } else if (recipe.recipe_type === "random") {
             apiRecipeIds.push(recipe.recipe_id);
         }
     });

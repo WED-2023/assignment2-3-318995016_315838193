@@ -33,6 +33,7 @@ async function getRecipeInformation(recipe_id) {
       servings,
       aggregateLikes,
       vegan,
+      summary,
       vegetarian,
       glutenFree,
       extendedIngredients,
@@ -57,6 +58,8 @@ async function getRecipeInformation(recipe_id) {
       portions: servings,
       likes: aggregateLikes,
       is_vegan: vegan,
+      summary: summary.replace(/<[^>]*>/g, '') // Remove all HTML tags
+      .split(/(?<=\.)/)[0], // Take the first sentence
       is_vegeterian: vegetarian,
       is_glutenFree: glutenFree,
       recipe_ingredient: ingredient_list,
