@@ -32,8 +32,8 @@ app.use(express.static(path.join(__dirname, "dist")));
 app.get("/",function(req,res)
 { 
   //remote: 
-  // res.sendFile(path.join(__dirname, 'C:/Users/Linoy Bitan/Desktop/recipes-preject/assignment2-1-318995016_315838193/dist/index.html'));
-  res.sendFile(__dirname+"/index.html");
+  res.sendFile(path.join(__dirname, 'C:/Users/Linoy Bitan/Desktop/recipes-preject/assignment2-1-318995016_315838193/dist/index.html'));
+  // res.sendFile(__dirname+"/index.html");
 
 });
 

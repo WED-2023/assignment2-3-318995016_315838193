@@ -264,25 +264,6 @@ router.post('/favoriteRecipes/:recipe_id/:recipe_type', async (req, res, next) =
 })
 
 
-/**
- * Route to get full details of a favorite recipe by its ID
- */
-// router.get('/favoriteRecipes/:recipe_id', async (req, res, next) => {
-//   try {
-//     // Extract the user_name from the session
-//     const user_name = req.session.user_name;
-//     // Extract the display_type from the request parameters
-//     const { recipe_id } = req.params;    
-//     // Retrieve the last 3 viewed recipes by the user
-//     const detailed_recipes = await user_utils.getViewedRecipes('favoriterecipes', user_name, 'full', 0, recipe_id);
-
-//     // Send the detailed recipes as a JSON response
-//     res.send({ recipe: detailed_recipes[0] });
-//   } catch (error) {
-//     // Pass any errors to the error handling middleware
-//     next(error);
-//   }
-// });
 router.get('/favoriteRecipes/:recipe_id/:recipe_type', async (req, res, next) => {
   try {
     const user_name = req.session.user_name;
