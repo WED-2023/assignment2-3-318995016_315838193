@@ -1,6 +1,5 @@
 *.pptx
 node_modules
-.env
 .vscode
 #codes/routes/recipes.js
 #codes\routes\recipes.js
