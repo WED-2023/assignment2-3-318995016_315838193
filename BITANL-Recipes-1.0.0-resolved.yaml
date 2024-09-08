@@ -1,0 +1,643 @@
+openapi: 3.0.0
+info:
+  title: Recipes Website API by Noam and Linoy
+  description: This is the API for a recipes website where you can view and create various recipes.
+  contact:
+    email: you@your-company.com
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: 1.0.0
+servers:
+  - url: https://virtserver.swaggerhub.com/BITANL/Recipes/1.0.0
+    description: SwaggerHub API Auto Mocking
+tags:
+  - name: recipes
+    description: Operations related to recipes
+  - name: users
+    description: Operations related to users
+paths:
+  /Register:
+    post:
+      tags:
+        - users
+      summary: Adds a user
+      description: Adds a new user to the system.
+      operationId: addUser
+      requestBody:
+        description: User details to register.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        "201":
+          description: User created successfully
+        "409":
+          description: Username already exists
+  /Login:
+    post:
+      tags:
+        - users
+      summary: Logs a user into the system
+      description: Authenticates a user using their username and password.
+      operationId: loginUser
+      requestBody:
+        description: Username and password for login.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/login_body'
+        required: true
+      responses:
+        "200":
+          description: User logged in successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/login_response_200'
+        "401":
+          description: Incorrect username or password
+  /Logout:
+    post:
+      tags:
+        - users
+      summary: Logs out the user
+      description: Logs out the authenticated user and invalidates the session.
+      operationId: logoutUser
+      responses:
+        "200":
+          description: User logged out successfully
+
+
+
+
+  /recipes/randomRecipes:
+    get:
+      tags:
+        - recipes
+      summary: Get 3 random recipes
+      description: Retrieves an array of 3 random recipes.
+      responses:
+        "200":
+          description: List of 3 random recipes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RecipePreview'
+  /recipes/searchRecipes/{recipe_name}/{amount_recipes}/{sort}/{cuisine}/{diet}/{intolerance}:
+    get:
+      tags:
+        - recipes
+      summary: Search for recipes
+      description: Searches for recipes based on the provided parameters.
+      parameters:
+        - name: recipe_name
+          in: path
+          description: Name of the recipe to search for.
+          required: true
+          schema:
+            type: string
+        - name: amount_recipes
+          in: path
+          description: Number of recipes to return.
+          required: true
+          schema:
+            type: integer
+        - name: sort
+          in: path
+          description: Sort order of the search results.
+          required: true
+          schema:
+            type: string
+        - name: cuisine
+          in: path
+          description: Cuisine type to filter by.
+          required: true
+          schema:
+            type: string
+        - name: diet
+          in: path
+          description: Diet type to filter by.
+          required: true
+          schema:
+            type: string
+        - name: intolerance
+          in: path
+          description: Intolerance type to filter by.
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Array of recipes matching the search criteria
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RecipePreview'
+  /recipes/{recipeId}:
+    get:
+      tags:
+        - recipes
+      summary: Get full recipe details
+      description: Retrieves full details of a recipe by its ID.
+      parameters:
+        - name: recipeId
+          in: path
+          description: ID of the recipe to retrieve.
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Full details of the recipe
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Recipe'
+
+
+
+
+  /users/personalRecipes:
+    get:
+      tags:
+        - users
+      summary: Get user's personal recipes
+      description: Retrieves personal recipes created by the authenticated user.
+      responses:
+        "200":
+          description: List of user's personal recipes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RecipePreview'
+  /users/personalRecipes/{recipe_id}:
+    get:
+      tags:
+        - users
+        - complete
+      summary: Get a personal recipe by its ID
+      description: Retrieves the full details of a personal recipe created by the authenticated user.
+      parameters:
+        - name: recipe_id
+          in: path
+          description: The ID of the personal recipe to retrieve.
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Full details of the personal recipe
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Recipe'
+        "404":
+          description: Personal recipe not found
+        "401":
+          description: User not authenticated
+  /users/favoriteRecipes:
+    get:
+      tags:
+        - users
+      summary: Get user's favorite recipes
+      description: Retrieves the favorite recipes of the authenticated user.
+      responses:
+        "200":
+          description: List of user's favorite recipes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RecipePreview'
+  /users/userFamilyRecipes:
+    get:
+      tags:
+        - users
+      summary: Get user's family recipes
+      description: Retrieves family recipes added by the authenticated user.
+      responses:
+        "200":
+          description: List of user's family recipes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FamilyRecipe'
+  /users/lastViewedRecipes:
+    get:
+      tags:
+        - users
+      summary: Get last 3 viewed recipes
+      description: Retrieves the last 3 recipes viewed by the authenticated user.
+      responses:
+        "200":
+          description: List of last 3 viewed recipes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RecipePreview'
+  /users/createPersonalRecipe:
+    post:
+      tags:
+        - users
+      summary: Create a new personal recipe
+      description: Adds a new personal recipe to the system for the authenticated user.
+      operationId: createPersonalRecipe
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Recipe'
+        required: true
+      responses:
+        "200":
+          description: Personal recipe created successfully
+  /users/createFamilyRecipe:
+    post:
+      tags:
+        - users
+      summary: Create a new family recipe
+      description: Adds a new family recipe to the system for the authenticated user.
+      operationId: createFamilyRecipe
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FamilyRecipe'
+        required: true
+      responses:
+        "200":
+          description: Family recipe created successfully
+  /users/favoriteRecipes/{recipe_id}/{recipe_type}:
+    get:
+      tags:
+        - users
+      summary: Get a favorite recipe by its ID and type
+      description: Retrieves full details of a favorite recipe based on the recipe ID and type for the authenticated user.
+      parameters:
+        - name: recipe_id
+          in: path
+          description: The ID of the recipe.
+          required: true
+          schema:
+            type: integer
+        - name: recipe_type
+          in: path
+          description: The type of the recipe (e.g., family, personal, api).
+          required: true
+          schema:
+            type: string
+            example: family
+      responses:
+        "200":
+          description: Full details of the favorite recipe
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Recipe'
+        "404":
+          description: Favorite recipe not found
+        "401":
+          description: User not authenticated
+  /users/lastViewedRecipes/{recipe_id}:
+    get:
+      tags:
+        - users
+      summary: Get a last viewed recipe by its ID
+      description: Retrieves the full details of a last viewed recipe by its ID for the authenticated user.
+      parameters:
+        - name: recipe_id
+          in: path
+          description: The ID of the recipe.
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Full details of the last viewed recipe
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Recipe'
+        "404":
+          description: Last viewed recipe not found
+        "401":
+          description: User not authenticated
+  /users/favoriteRecipes/{recipe_id}/{recipe_type}:
+    post:
+      tags:
+        - users
+      summary: Add a recipe to user's favorites
+      description: Adds a recipe to the authenticated user's favorites list based on recipe ID and type.
+      parameters:
+        - name: recipe_id
+          in: path
+          description: The ID of the recipe.
+          required: true
+          schema:
+            type: integer
+        - name: recipe_type
+          in: path
+          description: The type of the recipe (e.g., family, personal, api).
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Recipe added to user's favorites list
+        "401":
+          description: User not authenticated
+        "409":
+          description: Recipe is already in favorites
+  /users/familyRecipes:
+    get:
+      tags:
+        - users
+      summary: Get user's family recipes
+      description: Retrieves the family recipes created by the authenticated user.
+      responses:
+        "200":
+          description: List of user's family recipes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FamilyRecipe'
+        "401":
+          description: User not authenticated
+  /users/familyRecipes/{recipe_id}:
+    get:
+      tags:
+        - users
+      summary: Get a family recipe by its ID
+      description: Retrieves the full details of a family recipe by its ID for the authenticated user.
+      parameters:
+        - name: recipe_id
+          in: path
+          description: The ID of the family recipe.
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Full details of the family recipe
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FamilyRecipe'
+        "404":
+          description: Family recipe not found
+        "401":
+          description: User not authenticated
+  /users/lastViewedRecipes/{recipe_id}:
+    put:
+      tags:
+        - users
+      summary: Update a last viewed recipe
+      description: Updates the list of viewed recipes for the authenticated user based on the recipe ID and type (personal, family, api).
+      parameters:
+        - name: recipe_id
+          in: path
+          description: The ID of the recipe to mark as viewed.
+          required: true
+          schema:
+            type: integer
+        - name: recipe_type
+          in: path
+          description: The type of the recipe (e.g., personal, family, api).
+          required: true
+          schema:
+            type: string
+            enum: [personal, family, api]
+      responses:
+        "200":
+          description: The recipe has been successfully marked as viewed.
+          content:
+            application/json:
+              schema:
+                type: string
+                example: "The recipe has been successfully marked as viewed."
+        "400":
+          description: Invalid recipe type.
+          content:
+            application/json:
+              schema:
+                type: string
+                example: "Invalid recipe type"
+        "401":
+          description: User not authenticated.
+          content:
+            application/json:
+              schema:
+                type: string
+                example: "User not authenticated"
+        "500":
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                type: string
+                example: "Error updating last viewed recipe"
+components:
+  schemas:
+    User:
+      type: object
+      required:
+        - country
+        - email
+        - firstname
+        - lastname
+        - password
+        - username
+      properties:
+        username:
+          type: string
+          maxLength: 8
+          minLength: 3
+          pattern: "^[A-Za-z]+$"
+          example: NoamBarak
+        firstname:
+          type: string
+          example: Noam
+        lastname:
+          type: string
+          example: Barak
+        country:
+          type: string
+          example: Israel
+        password:
+          type: string
+          maxLength: 10
+          minLength: 5
+          pattern: "^(?=.*[0-9])(?=.*[!@#$%^&*(),.?\":{}|<>])[a-zA-Z0-9!@#$%^&*(),.?\":{}|<>]{5,10}$"
+          example: NoamB#1
+        email:
+          type: string
+          format: email
+          example: noam@gmail.com
+    login_body:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+    login_response_200:
+      type: object
+      properties:
+        status:
+          type: string
+        username:
+          type: string
+    Recipe:
+      type: object
+      required:
+        - RecipesIngredients
+        - RecipesInstructions
+        - image_recipe
+        - is_glutenFree
+        - is_vegan
+        - is_vegetarian
+        - likes
+        - portions
+        - prepare_time
+        - recipe_id
+        - recipe_name
+        - summary
+        - user_name
+      properties:
+        user_name:
+          type: string
+          example: NoamBarak
+        recipe_id:
+          type: integer
+          example: 123456
+        recipe_name:
+          type: string
+          example: Cheese Cake
+        image_recipe:
+          type: string
+          format: binary
+        prepare_time:
+          type: integer
+          example: 30
+        likes:
+          type: integer
+          example: 245
+        is_vegan:
+          type: boolean
+          example: true
+        is_vegetarian:
+          type: boolean
+          example: true
+        is_glutenFree:
+          type: boolean
+          example: true
+        summary:
+          type: string
+          example: Best Recipe ever
+        RecipesInstructions:
+          type: array
+          items:
+            type: string
+          example: 
+            - "1. Bring a large pot of salted water to a boil."
+            - "2. Add the pasta and cook according to package instructions."
+        RecipesIngredients:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecipesIngredients'
+        portions:
+          type: integer
+          example: 30
+    RecipesIngredients:
+      type: object
+      required:
+        - original
+        - recipe_id
+      properties:
+        recipe_id:
+          type: integer
+          example: 5
+        original:
+          type: string
+          example: 1 tbsp butter
+    RecipePreview:
+      type: object
+      required:
+        - image_recipe
+        - is_glutenFree
+        - is_vegan
+        - is_vegetarian
+        - likes
+        - prepare_time
+        - recipe_id
+        - recipe_name
+        - summary
+        - user_name
+      properties:
+        user_name:
+          type: string
+          example: NoamBarak
+        recipe_id:
+          type: integer
+          example: 123456
+        recipe_name:
+          type: string
+          example: Cheese Cake
+        image_recipe:
+          type: string
+          format: binary
+        prepare_time:
+          type: integer
+          example: 30
+        likes:
+          type: integer
+          example: 245
+        is_vegan:
+          type: boolean
+          example: true
+        is_vegetarian:
+          type: boolean
+          example: true
+        is_glutenFree:
+          type: boolean
+          example: true
+        summary:
+          type: string
+          example: Best Recipe ever
+    FamilyRecipe:
+      type: object
+      required:
+        - recipe
+        - recipeOwner
+        - whenIsItUsuallyPrepared
+      properties:
+        recipe:
+          $ref: '#/components/schemas/Recipe'
+        recipeOwner:
+          type: string
+          example: Ronen
+        whenIsItUsuallyPrepared:
+          type: string
+          example: New Year 1
+    inline_response_200:
+      type: object
+      properties:
+        user_id:
+          type: string
+          description: The name of the user
+          example: NoamBarak
