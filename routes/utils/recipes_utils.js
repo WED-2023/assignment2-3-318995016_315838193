@@ -12,7 +12,7 @@ const DButils = require("./DButils");
 //------------------------------------ Get Details of Single Recipe Functions -------------------------------------------
 
 /**
- * Gets full information about a recipe from Spoonacular API.
+ * Gets full information about a recipe from the Spoonacular API.
  * @param {number} recipe_id - The ID of the recipe to retrieve information for.
  * @returns {Promise<Object>} - A promise that resolves with the recipe information.
  */
@@ -70,10 +70,12 @@ async function getRecipeInformation(recipe_id) {
     throw error;
   }
 }
+
+
 /**
- * Extracts relevant recipe data from the Spoonacular response for preview page.
+ * Extracts relevant recipe data from Spoonacular API for preview page.
  * @param {number} recipe_id - The ID of the recipe to retrieve preview details for.
- * @returns {Promise<Object>} - A promise that resolves with an object containing the relevant recipe data for preview.
+ * @returns {Promise<Object>} - A promise that resolves with relevant recipe data for preview.
  */
 async function getRecipePreviewDetails(recipe_id) {
     let recipe_info = await getRecipeInformation(recipe_id);
@@ -96,7 +98,7 @@ async function getRecipePreviewDetails(recipe_id) {
 /**
  * Extracts relevant recipe data for a list of recipe IDs for preview.
  * @param {Array<number>} recipes_id_array - The list of recipe IDs to retrieve preview details for.
- * @returns {Promise<Array<Object>>} - A promise that resolves with an array of recipe objects with relevant data for preview.
+ * @returns {Promise<Array<Object>>} - A promise that resolves with an array of recipe objects for preview.
  */
 async function getRecipesPreviewDetails(recipes_id_array) {
 
@@ -107,9 +109,9 @@ async function getRecipesPreviewDetails(recipes_id_array) {
 }
 
 /**
- * Extracts relevant recipe data from for a list of recipe from the spoonacular response for full page.
- * @param {Array} recipes_info - The list of recipe objects from the spoonacular response.
- * @returns {Promise<Array>} - A promise that resolves with an array of recipe objects with relevant data for preview.
+ * Extracts full recipe details for a list of recipes.
+ * @param {Array} recipes_list - The list of recipe objects from Spoonacular API.
+ * @returns {Promise<Array<Object>>} - A promise that resolves with an array of full recipe details.
  */
 async function getRecipesFullDetails(recipes_list) {
     const promises = recipes_list.map(async (recipe) => {
@@ -181,14 +183,14 @@ async function handleRandomRecipe(number) {
 //------------------------------------ Search Recipes Functions -------------------------------------------
 
 /**
- * Searches for recipes based on various parameters and returns the results.
+ * Searches for recipes based on various filters and returns the results.
  * @param {string} recipe_name - The name of the recipe to search for.
  * @param {number} amount_recipes - The number of recipes to retrieve.
  * @param {string} sort - The sorting criteria.
- * @param {string} cuisine - The type of cuisine to filter by.
- * @param {string} diet - The type of diet to filter by.
- * @param {string} intolerance - The type of intolerance to filter by.
- * @returns {Promise<Array>} - A promise that resolves with an array of recipe results.
+ * @param {string} cuisine - The cuisine type to filter by.
+ * @param {string} diet - The diet type to filter by.
+ * @param {string} intolerance - The intolerance type to filter by.
+ * @returns {Promise<Array<Object>>} - A promise that resolves with an array of search results.
  */
 async function searchRecipes(recipe_name, amount_recipes, sort, cuisine, diet, intolerance) {
     const APIresponse = await axios.get(`${api_domain}/complexSearch`, {

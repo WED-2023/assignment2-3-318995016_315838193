@@ -31,9 +31,8 @@ router.use(async function (req, res, next) {
 
 
 /**
- * Route to get personal recipes for the logged-in user
- * If 'type' parameter is 'full', detailed recipe information is returned
- * If 'type' parameter is 'preview', only basic recipe information is returned
+ * Route to get personal recipes for the logged-in user.
+ * Currently, all recipes are returned with basic information.
  */
 router.get('/personalRecipes', async (req, res, next) => {  //preview
   try {
@@ -49,6 +48,9 @@ router.get('/personalRecipes', async (req, res, next) => {  //preview
 });
 
 
+/**
+ * Route to get detailed information of a personal recipe by its ID.
+ */
 router.get('/personalRecipes/:recipe_id', async (req, res, next) => {  //full/id
   try {
     const user_name = req.session.user_name;
@@ -61,6 +63,11 @@ router.get('/personalRecipes/:recipe_id', async (req, res, next) => {  //full/id
 });
 
 
+
+/**
+ * Route to create a new personal recipe for the logged-in user.
+ * Validation is applied to all recipe fields.
+ */
 router.post('/createPersonalRecipe',
   [
     body('recipe_name').isString().isLength({ max: 750 }),
@@ -154,6 +161,9 @@ router.get('/familyRecipes', async (req, res, next) => {
 });
 
 
+/**
+ * Route to get detailed information of a family recipe by its ID.
+ */
 router.get('/familyRecipes/:recipe_id', async (req, res, next) => {
   try {
     const user_name = req.session.user_name;
@@ -165,6 +175,12 @@ router.get('/familyRecipes/:recipe_id', async (req, res, next) => {
   }
 });
 
+
+
+/**
+ * Route to create a new family recipe for the logged-in user.
+ * Includes validation for all family recipe fields.
+ */
 router.post('/createFamilyRecipe',
   [
     body('recipe_name').isString().isLength({ max: 750 }),
@@ -249,7 +265,8 @@ router.post('/createFamilyRecipe',
 //------------------------------------ Favorite Recipes Functions -------------------------------------------
 
 /**
- * This path gets body with recipeId and save this recipe in the favorites list of the logged-in user according to the type - personal/family/api
+ * Route to add a recipe to the logged-in user's favorites.
+ * Recipe type can be personal, family, or api.
  */
 router.post('/favoriteRecipes/:recipe_id/:recipe_type', async (req, res, next) => {
   try {
@@ -264,6 +281,10 @@ router.post('/favoriteRecipes/:recipe_id/:recipe_type', async (req, res, next) =
 })
 
 
+
+/**
+ * Route to check if a recipe is in the user's favorites and return its details.
+ */
 router.get('/favoriteRecipes/:recipe_id/:recipe_type', async (req, res, next) => {
   try {
     const user_name = req.session.user_name;
@@ -312,8 +333,6 @@ router.get('/favoriteRecipes/:recipe_id/:recipe_type', async (req, res, next) =>
 /**
  * This path returns the favorites recipes that were saved by the logged-in user
  */
-
-
 router.get("/favoriteRecipes", async (req, res, next) => {
   try {
     // Extract the user_name from the session
@@ -335,7 +354,9 @@ router.get("/favoriteRecipes", async (req, res, next) => {
 
 //------------------------------------ Last Viewed Recipes Functions -------------------------------------------
 
-
+/**
+ * Route to get the last three viewed recipes by the logged-in user.
+ */
 router.get("/lastViewedRecipes", async (req, res, next) => {
   try {
     // Extract the user_name from the session
@@ -352,7 +373,9 @@ router.get("/lastViewedRecipes", async (req, res, next) => {
 });
 
 
-
+/**
+ * Route to get detailed information about a last viewed recipe by its ID.
+ */
 router.get('/lastViewedRecipes/:recipe_id', async (req, res, next) => {
   try {
     // Extract the user_name from the session

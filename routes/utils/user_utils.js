@@ -4,10 +4,12 @@ const recipe_utils = require("./recipes_utils");
 //------------------------------------ Get Personal / Family , Full / Preview Recipes Functions -------------------------------------------
 
 /**
- * Function to get recipes based on the type and category (personal/family)
- * @param {string} user_name - The name of the user
- * @param {string} category - The category of recipes ('personal' or 'family')
- * @returns {Promise<Array>} - A promise that resolves to an array of recipes
+ * Retrieves a list of either personal or family recipes for a user.
+ * It first retrieves the recipe IDs and then uses those to get the recipe previews.
+ * 
+ * @param {string} user_name - The name of the user.
+ * @param {string} category - The category of the recipes ('personal' or 'family').
+ * @returns {Promise<Array>} - A promise that resolves to an array of recipe previews.
  */
 async function getRecipes(user_name, category) {
     const recipes_id = await DButils.execQuery(`SELECT recipe_id FROM recipes WHERE user_name='${user_name}' AND recipe_type ='${category}'`);
@@ -17,10 +19,11 @@ async function getRecipes(user_name, category) {
 }
 
 /**
- * Function to get basic recipe information in the same structure as full
- * @param {Array} recipes_id_list - A list of recipe IDs
- * @param {string} category - The category of recipes ('personal' or 'family')
- * @returns {Promise<Array>} - A promise that resolves to an array of basic recipes
+ * Fetches basic information for a list of recipes, including name, preparation time, and other basic properties.
+ * 
+ * @param {Array} recipes_id_list - A list of recipe IDs to fetch.
+ * @param {string} category - The category of the recipes ('personal' or 'family').
+ * @returns {Promise<Array>} - A promise that resolves to an array of basic recipe information.
  */
 async function getPreviewRecipes(recipes_id_list, category) {
     const promises = recipes_id_list.map((recipe_id) => {
@@ -52,11 +55,13 @@ async function getPreviewRecipes(recipes_id_list, category) {
     });
 }
 
+
 /**
- * Function to handle full recipes by their IDs and category
- * @param {string} recipe_id - A recipe ID
- * @param {string} category - The category of recipes ('personal' or 'family')
- * @returns {Promise<Object>} - A promise that resolves to a detailed recipe
+ * Retrieves the full details of a recipe, including ingredients and instructions.
+ * 
+ * @param {string} recipe_id - The ID of the recipe.
+ * @param {string} category - The category of the recipe ('personal' or 'family').
+ * @returns {Promise<Object>} - A promise that resolves to an object containing the full recipe details, ingredients, and instructions.
  */
 async function getFullRecipe(recipe_id, category) {
     const result_recipe = await DButils.execQuery(`SELECT * FROM recipes WHERE recipe_id=${recipe_id} AND recipe_type ='${category}'`);
@@ -67,13 +72,15 @@ async function getFullRecipe(recipe_id, category) {
     return recipe_details;
 }
 
+
 /**
- * Function to get detailed recipe information
- * @param {Object} recipe - Recipe data
- * @param {Array} ingre - List of ingredients
- * @param {Array} steps - List of steps
- * @param {string} category - The category of recipes ('personal' or 'family')
- * @returns {Promise<Object>} - A promise that resolves to a formatted recipe
+ * Helper function to format the full recipe details, including ingredients and instructions.
+ * 
+ * @param {Object} recipe - Recipe object containing basic recipe information.
+ * @param {Array} ingre - List of ingredients related to the recipe.
+ * @param {Array} steps - List of instructions or steps for the recipe.
+ * @param {string} category - The category of the recipe ('personal' or 'family').
+ * @returns {Promise<Object>} - A promise that resolves to a formatted recipe object.
  */
 async function getRecipeDetails(recipe, ingre, steps, category) {
     const ingredient_list = ingre.map((ingredient) => ({
@@ -108,22 +115,23 @@ async function getRecipeDetails(recipe, ingre, steps, category) {
 }
 
 //------------------------------------ Create Personal Recipes Functions -------------------------------------------
-
 /**
- * Function to create and save a personal recipe
- * @param {string} user_name - The name of the user
- * @param {string} recipe_name - The name of the recipe
- * @param {string} image_recipe - The image of the recipe
- * @param {number} prepare_time - The preparation time of the recipe
- * @param {number} likes - The number of likes
- * @param {boolean} is_vegan - Whether the recipe is vegan
- * @param {boolean} is_vegeterian - Whether the recipe is vegetarian
- * @param {boolean} is_glutenFree - Whether the recipe is gluten-free
- * @param {string} summary - The summary of the recipe
- * @param {string} RecipesInstructions - The instructions for the recipe
- * @param {Array} RecipesIngredients - The ingredients for the recipe
- * @param {number} portions - The number of portions
- * @returns {Promise<void>}
+ * Creates a personal recipe and stores it in the database. Also stores the related ingredients and instructions.
+ * 
+ * @param {string} user_name - The name of the user creating the recipe.
+ * @param {string} recipe_name - The name of the recipe.
+ * @param {string} image_recipe - The image of the recipe.
+ * @param {number} prepare_time - Preparation time in minutes.
+ * @param {number} likes - Initial number of likes (default is 0).
+ * @param {boolean} is_vegan - Whether the recipe is vegan.
+ * @param {boolean} is_vegeterian - Whether the recipe is vegetarian.
+ * @param {boolean} is_glutenFree - Whether the recipe is gluten-free.
+ * @param {string} summary - A short description or summary of the recipe.
+ * @param {Array} RecipesInstructions - A list of instructions for preparing the recipe.
+ * @param {Array} RecipesIngredients - A list of ingredients for the recipe.
+ * @param {number} portions - Number of portions the recipe makes.
+ * @param {string} recipe_type - The type of recipe ('personal').
+ * @returns {Promise<void>} - A promise that resolves when the recipe is successfully created.
  */
 async function createPersonalRecipe(
     user_name,
@@ -193,22 +201,24 @@ async function createPersonalRecipe(
 
 
 /**
- * Function to create and save a family recipe
- * @param {string} user_name - The name of the user
- * @param {string} recipe_name - The name of the recipe
- * @param {string} image_recipe - The image of the recipe
- * @param {number} prepare_time - The preparation time of the recipe
- * @param {number} likes - The number of likes
- * @param {boolean} is_vegan - Whether the recipe is vegan
- * @param {boolean} is_vegeterian - Whether the recipe is vegetarian
- * @param {boolean} is_glutenFree - Whether the recipe is gluten-free
- * @param {string} who_made - The name of who made the family recipe.
- * @param {string} when_prepare- Information about when the family recipe is usually prepared.
- * @param {string} summary - The summary of the recipe
- * @param {string} RecipesInstructions - The instructions for the recipe
- * @param {Array} RecipesIngredients - The ingredients for the recipe
- * @param {number} portions - The number of portions
- * @returns {Promise<void>}
+ * Creates a family recipe with extra details such as who made it and when it's typically prepared.
+ * 
+ * @param {string} user_name - The name of the user creating the recipe.
+ * @param {string} recipe_name - The name of the recipe.
+ * @param {string} image_recipe - The image of the recipe.
+ * @param {number} prepare_time - Preparation time in minutes.
+ * @param {number} likes - Initial number of likes (default is 0).
+ * @param {boolean} is_vegan - Whether the recipe is vegan.
+ * @param {boolean} is_vegeterian - Whether the recipe is vegetarian.
+ * @param {boolean} is_glutenFree - Whether the recipe is gluten-free.
+ * @param {string} summary - A short description or summary of the recipe.
+ * @param {Array} RecipesInstructions - A list of instructions for preparing the recipe.
+ * @param {Array} RecipesIngredients - A list of ingredients for the recipe.
+ * @param {number} portions - Number of portions the recipe makes.
+ * @param {string} recipe_type - The type of recipe ('family').
+ * @param {string} who_made - The name of the person who made the family recipe.
+ * @param {string} when_prepare - The time or occasion when the family recipe is usually prepared.
+ * @returns {Promise<void>} - A promise that resolves when the family recipe is successfully created.
  */
 async function createFamilyRecipe(
     user_name,
@@ -269,11 +279,12 @@ async function createFamilyRecipe(
 //------------------------------------ Last Viewed Recipes Functions -------------------------------------------
 
 /**
- * Function to update the viewed recipes for the logged-in user
- * @param {string} user_name - The name of the user
- * @param {number} recipe_id - The ID of the recipe
- * @param {string} recipe_type - The type of the recipe
- * @returns {Promise<void>}
+ * Adds or updates the last viewed recipe for a user. If the recipe has already been viewed, it updates the timestamp.
+ * 
+ * @param {string} user_name - The name of the user.
+ * @param {number} recipe_id - The ID of the viewed recipe.
+ * @param {string} recipe_type - The type of the recipe (e.g., 'personal', 'family', 'api').
+ * @returns {Promise<void>} - A promise that resolves when the viewed recipe is successfully recorded or updated.
  */
 async function putViewedRecipes(user_name, recipe_id, recipe_type) {
     try {
@@ -291,6 +302,15 @@ async function putViewedRecipes(user_name, recipe_id, recipe_type) {
 
 
 //------------------------------------ Favorite Recipes Functions -------------------------------------------
+
+/**
+ * Marks a recipe as a favorite for a user and increments the likes count for that recipe.
+ * 
+ * @param {string} user_name - The name of the user marking the recipe as a favorite.
+ * @param {number} recipe_id - The ID of the recipe to be marked as favorite.
+ * @param {string} recipe_type - The type of the recipe (can be 'personal', 'family', or 'random').
+ * @returns {Promise<void>} - A promise that resolves when the recipe is marked as a favorite.
+ */
 async function markAsFavorite(user_name, recipe_id, recipe_type) {
     if (recipe_type === "last_viewed") {
         // Fetch the actual recipe type from the viewed recipes
@@ -328,13 +348,14 @@ async function markAsFavorite(user_name, recipe_id, recipe_type) {
 //------------------------------------ Get Recipes By Type Functions -------------------------------------------
 
 /**
- * Function to get all the recipes viewed by the user
- * @param {string} table_name - The name of the table
- * @param {string} user_name - The name of the user
- * @param {string} display_type - The type of display ("full" or other)
- * @param {number} limit - The number of recipes to retrieve (0 for all)
- * @param {string} [recipe_id] - Optional recipe ID to filter by
- * @returns {Promise<Array>} - A promise that resolves to an array of viewed recipes id and type
+ * Retrieves recipes viewed by the user, either in full or preview form.
+ * 
+ * @param {string} table_name - The name of the table from which to retrieve recipes.
+ * @param {string} user_name - The name of the user.
+ * @param {string} display_type - The type of display ('full' for detailed recipes or other for preview).
+ * @param {number} limit - The number of recipes to retrieve (default is 0 for all).
+ * @param {string} [recipe_id] - (Optional) If provided, fetches recipes filtered by this specific recipe ID.
+ * @returns {Promise<Array>} - A promise that resolves to an array of viewed recipes (with either full or preview details).
  */
 async function getViewedRecipes(table_name, user_name, display_type, limit = 0, recipe_id) {
     try {
@@ -373,9 +394,10 @@ async function getViewedRecipes(table_name, user_name, display_type, limit = 0, 
 }
 
 /**
- * Categorize recipes by their type
- * @param {Array} recipes - Array of viewed recipes id and type
- * @returns {Object} - Object containing arrays of recipe IDs categorized by type
+ * Categorizes a list of recipes by type (family, personal, or API).
+ * 
+ * @param {Array} recipes - An array of recipes with IDs and basic details.
+ * @returns {Object} - An object categorizing the recipes by their type.
  */
 function categorizeRecipesByType(recipes) {
     const familyRecipeIds = [];
